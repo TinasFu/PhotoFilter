@@ -187,6 +187,9 @@
                             <constraint firstAttribute="trailing" secondItem="Qch-bW-OKL" secondAttribute="trailing" id="xEN-EP-Phf"/>
                         </constraints>
                     </view>
+                    <connections>
+                        <outlet property="collectionView" destination="Qch-bW-OKL" id="kVV-KM-HvN"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="YiH-F6-MxY" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -222,7 +225,7 @@
                                 <constraints>
                                     <constraint firstAttribute="height" constant="100" id="GMd-wD-Zhp"/>
                                 </constraints>
-                                <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="10" minimumInteritemSpacing="10" id="Zxr-rd-RPV">
+                                <collectionViewFlowLayout key="collectionViewLayout" scrollDirection="horizontal" minimumLineSpacing="10" minimumInteritemSpacing="10" id="Zxr-rd-RPV">
                                     <size key="itemSize" width="100" height="100"/>
                                     <size key="headerReferenceSize" width="0.0" height="0.0"/>
                                     <size key="footerReferenceSize" width="0.0" height="0.0"/>

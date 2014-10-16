@@ -70,7 +70,7 @@ class GalleryViewController: UIViewController, UICollectionViewDataSource, UICol
         var reusableView : UICollectionReusableView!
         if(kind == UICollectionElementKindSectionHeader){
             let headerView : HeaderCell = collectionView.dequeueReusableSupplementaryViewOfKind(UICollectionElementKindSectionHeader, withReuseIdentifier: "HeaderView", forIndexPath: indexPath) as HeaderCell
-            let title = "Gallery"
+            let title = "Choose a Photo From Gallery"
             headerView.headerLabelView.text = title
             reusableView = headerView
             

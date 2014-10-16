@@ -13,13 +13,13 @@ import OpenGLES
 
 
 
-class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UICollectionViewDataSource {
+class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate, PhotoFrameworkDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UICollectionViewDataSource {
     
     
     //properties
     @IBOutlet weak var imageView: UIImageView!
     
-    //add constraint outlet from storyboard
+    //add constraint outlet from storyboard so later in enterFilterMode we can modify the constraint to show the filter collection view
     @IBOutlet weak var imageViewTrailingConstraint: NSLayoutConstraint!
     @IBOutlet weak var imageViewLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var imageViewTopConstraint: NSLayoutConstraint!
@@ -35,7 +35,7 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
     var filter : CIFilter?
     
     var originalImageView : UIImage?
-    
+    var seeder : CoreDataSeeder?
     //core data array
     var filters = [Filter]()
     //array of thumbnail wrapper objects
@@ -60,8 +60,8 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
         var appDelegate = UIApplication.sharedApplication().delegate as AppDelegate
         self.managedObjectContext = appDelegate.managedObjectContext
         
-        var seeder = CoreDataSeeder(context: appDelegate.managedObjectContext!)
-        seeder.seedCoreData()
+        seeder = CoreDataSeeder(context: appDelegate.managedObjectContext!)
+        //seeder.seedCoreData()
         
         self.fetchFilters()
         self.resetFilterThumbnails()
@@ -89,7 +89,10 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
         if segue.identifier == "SHOW_GALLERY" {
             let destinationVC = segue.destinationViewController as GalleryViewController
             destinationVC.delegate = self
-            
+        }
+        else if segue.identifier == "SHOW_PHOTO_FRAMEWORK"{
+            let destinationVC = segue.destinationViewController as PhotoFrameworkViewController
+            destinationVC.delegate = self
         }
     }
     
@@ -140,6 +143,10 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
             
         }
         
+        let photoFrameworkAction = UIAlertAction(title: "Photo Framework", style: UIAlertActionStyle.Default) { (action) -> Void in
+            self.performSegueWithIdentifier("SHOW_PHOTO_FRAMEWORK", sender: self)
+        }
+        
         // add Camera action button
         let cameraAction = UIAlertAction(title: "Camera", style: UIAlertActionStyle.Default) { (action) -> Void in
             let imagePicker = UIImagePickerController()
@@ -162,7 +169,9 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
         alertController.addAction(galleryAction)
         alertController.addAction(cancelAction)
         alertController.addAction(cameraAction)
+        alertController.addAction(photoFrameworkAction)
         alertController.addAction(filterAction)
+        
         self.presentViewController(alertController, animated: true, completion: nil)
     }
     
@@ -235,15 +244,27 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
         
         // return an array of filter objects
         var error: NSError?
-        let fetchResults = context?.executeFetchRequest(fetchRequest, error: &error)
-        if let filters = fetchResults as? [Filter] {
+        
+        // the variables inside of fetchResults() are captured
+        func fetchResults() -> [Filter]? {
+            let res = context?.executeFetchRequest(fetchRequest, error: &error)
+            return res as? [Filter]
+        }
+        
+        // if the fetchREsults() has value then unwrap and assign it to filters
+        // if filter is empty seed the coredata and try fo fetch filter again
+        
+        if let filters = fetchResults() {
             if filters.isEmpty {
-               // self.seedCoreData()
-            } else {
-                println("filters: \(filters.count)")
+                self.seeder?.seedCoreData()
+                if let filters2 = fetchResults() {
+                    self.filters = filters2
+                }
+            }else {
                 self.filters = filters
             }
-            
+            println("filters: \(self.filters.count)")
+
         }
     }
     
@@ -256,7 +277,9 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
             var thumbnail = FilterThumbnail(name: filterName, thumbnail: self.originalThumbnail!, queue: self.imageQueue, context: self.context!)
             newFilters.append(thumbnail)
         }
+        
         self.filterThumbnails = newFilters
+        
     }
     
 }
