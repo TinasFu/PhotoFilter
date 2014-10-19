@@ -17,17 +17,29 @@ class GalleryViewController: UIViewController, UICollectionViewDataSource, UICol
 
     @IBOutlet weak var collectionView: UICollectionView!
     
-    //delegate property should always be week
+    // define a flowlayout object for Gallery View
+    var flowlayout : UICollectionViewFlowLayout!
     
+    var originalItemWidth : CGFloat?
+    var originalItemHeight : CGFloat?
+    
+    //delegate property should always be weak
     weak var delegate: GalleryDelegate?
     
     var images = [UIImage]()
     
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        
+        // set the current collectionview layout to flowlayout
+        self.flowlayout = self.collectionView.collectionViewLayout as UICollectionViewFlowLayout
+        //define a guesture recognizer "pinch" when this guesture happens, trigger the function "pinchAction"
+        // the ":" in "pinchAction:" will trigger the function "pinchAction"
+        self.originalItemWidth = flowlayout.itemSize.width
+        self.originalItemHeight = flowlayout.itemSize.height
+        //var pinch = UIPinchGestureRecognizer(target:self, action: "pinchAction:")
+        var pinch = UIPinchGestureRecognizer(target: self, action: "pinchAction:")
+        self.collectionView.addGestureRecognizer(pinch)
         
         
         var image1 = UIImage(named: "photo2.jpg")
@@ -47,6 +59,24 @@ class GalleryViewController: UIViewController, UICollectionViewDataSource, UICol
 
         // Do any additional setup after loading the view.
     }
+    
+    // Action after Pinch
+    func pinchAction(pinch : UIPinchGestureRecognizer) {
+        println("hello")
+        if pinch.state == UIGestureRecognizerState.Ended {
+            println("ended")
+            println(pinch.velocity)
+            self.collectionView.performBatchUpdates({ () -> Void in
+                if pinch.velocity > 0 && self.flowlayout.itemSize.width < self.originalItemWidth! * 4 {
+                    self.flowlayout.itemSize = CGSize(width: self.flowlayout.itemSize.width * 2, height: self.flowlayout.itemSize.height * 2)
+                } else if pinch.velocity < 0 && self.flowlayout.itemSize.width > self.originalItemWidth! * 0.25 {
+                    self.flowlayout.itemSize = CGSize(width: self.flowlayout.itemSize.width * 0.5, height: self.flowlayout.itemSize.height * 0.5)
+                }
+                }, completion: nil )
+        }
+        
+    }
+
     
     
     //implementation of the protocol to assign image to Gallery Cell

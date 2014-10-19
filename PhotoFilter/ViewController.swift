@@ -10,10 +10,12 @@ import UIKit
 import CoreImage
 import CoreData //give access to all coredata claases
 import OpenGLES
+import Photos
+import Social
 
 
 
-class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate, PhotoFrameworkDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UICollectionViewDataSource {
+class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate, PhotoFrameworkDelegate, AVFoundationCameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UICollectionViewDataSource {
     
     
     //properties
@@ -28,10 +30,11 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
     @IBOutlet weak var collectionViewBottomConstraint: NSLayoutConstraint!
     @IBOutlet weak var collectionView: UICollectionView!
     
+    @IBOutlet weak var savePhotoButton: UIButton!
+    
+    @IBOutlet weak var postToTwitterButton: UIButton!
     var context : CIContext?
-    
     var originalThumbnail : UIImage?
-    
     var filter : CIFilter?
     
     var originalImageView : UIImage?
@@ -71,6 +74,9 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
         self.collectionView.dataSource = self
         self.collectionView.delegate = self
         
+        
+
+        
         // Do any additional setup after loading the view, typically from a nib.
     }
     
@@ -90,8 +96,12 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
             let destinationVC = segue.destinationViewController as GalleryViewController
             destinationVC.delegate = self
         }
-        else if segue.identifier == "SHOW_PHOTO_FRAMEWORK"{
+        else if segue.identifier == "SHOW_PHOTO_FRAMEWORK" {
             let destinationVC = segue.destinationViewController as PhotoFrameworkViewController
+            destinationVC.delegate = self
+        }
+        else if segue.identifier == "SHOW_AVFOUNDATION_CAMERA" {
+            let destinationVC = segue.destinationViewController as AVFoundationCameraViewController
             destinationVC.delegate = self
         }
     }
@@ -111,6 +121,9 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
         // set the "done" button
         var doneButton = UIBarButtonItem(title: "Done", style: UIBarButtonItemStyle.Done, target: self, action: "exitFilteringMode")
         self.navigationItem.rightBarButtonItem = doneButton
+        
+        self.savePhotoButton.hidden = true
+        self.postToTwitterButton.hidden = true
     }
     
     func exitFilteringMode () {
@@ -122,20 +135,54 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
         self.collectionViewBottomConstraint.constant = -100
         //remove the Done button
         self.navigationItem.rightBarButtonItem = nil
+        self.savePhotoButton.hidden = false
+        self.postToTwitterButton.hidden = false
     }
     
     
+    @IBAction func savePhotoPressed(sender: AnyObject) {
+        // save filtered picture to photo library
+        PHPhotoLibrary.sharedPhotoLibrary().performChanges({ () -> Void in
+            let item = PHAssetChangeRequest.creationRequestForAssetFromImage(self.imageView.image)
+            }, completionHandler: nil)
+        
+    }
+    
+    
+    
+    // Post image to Twitter
+    @IBAction func postToTwitterPressed(sender: AnyObject) {
+        
+        if SLComposeViewController.isAvailableForServiceType(SLServiceTypeTwitter) {
+            
+            var tweetSheet = SLComposeViewController(forServiceType: SLServiceTypeTwitter)
+            
+            tweetSheet.setInitialText("Look at this nice picture!")
+            tweetSheet.addImage(imageView.image)
+            
+            
+            self.presentViewController(tweetSheet, animated: true, completion: nil)
+        } else {
+            
+            println("error")
+        }
+
+    }
     
     //Alert Controller.
     @IBAction func photoPressed(sender: AnyObject) {
         
         let alertController = UIAlertController(title: nil, message: "Choose an option", preferredStyle: UIAlertControllerStyle.ActionSheet)
-        //let a = UIAlertAction(title: String, style: UIAlertActionStyle, handler: <#((UIAlertAction!) -> Void)!##(UIAlertAction!) -> Void#>)
+        //let a = UIAlertAction(title: String, style: UIAlertActionStyle, handler: { (UIAlertAction!) -> Void in
+    //    code
+    //})
         // add Gallery action button
+        
         let galleryAction = UIAlertAction(title: "Gallery", style: UIAlertActionStyle.Default) { (action) -> Void in
             //segue to our gallery
             self.performSegueWithIdentifier("SHOW_GALLERY", sender: self)
         }
+        
         
         
         // add Cancel action button
@@ -145,6 +192,10 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
         
         let photoFrameworkAction = UIAlertAction(title: "Photo Framework", style: UIAlertActionStyle.Default) { (action) -> Void in
             self.performSegueWithIdentifier("SHOW_PHOTO_FRAMEWORK", sender: self)
+        }
+        
+        let avFoundationCameraAction = UIAlertAction(title: "AVFoundation Camera", style: UIAlertActionStyle.Default) { (action) -> Void in
+            self.performSegueWithIdentifier("SHOW_AVFOUNDATION_CAMERA", sender: self)
         }
         
         // add Camera action button
@@ -170,6 +221,7 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
         alertController.addAction(cancelAction)
         alertController.addAction(cameraAction)
         alertController.addAction(photoFrameworkAction)
+        alertController.addAction(avFoundationCameraAction)
         alertController.addAction(filterAction)
         
         self.presentViewController(alertController, animated: true, completion: nil)
@@ -190,7 +242,8 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
     func didTapOnPicture(image: UIImage) {
         print("Did tap on picture")
         self.imageView.image = image
-        self.originalImageView = self.imageView.image
+        //self.originalImageView = self.imageView.image
+        self.originalImageView = image
         self.generateThumbnail()
         self.resetFilterThumbnails()
         self.collectionView.reloadData()
@@ -246,6 +299,11 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
         var error: NSError?
         
         // the variables inside of fetchResults() are captured
+        
+        // ??????????Question???????????????? can't ruturn res in one line
+        
+        // let res = context?.executeFetchRequest(fetchRequest, error: &error) as [Filter]
+        
         func fetchResults() -> [Filter]? {
             let res = context?.executeFetchRequest(fetchRequest, error: &error)
             return res as? [Filter]
@@ -281,6 +339,13 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
         self.filterThumbnails = newFilters
         
     }
+    
+
+    
+    
+
+    
+    
     
 }
 
