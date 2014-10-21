@@ -124,6 +124,8 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
         
         self.savePhotoButton.hidden = true
         self.postToTwitterButton.hidden = true
+        
+        
     }
     
     func exitFilteringMode () {
@@ -135,6 +137,7 @@ class ViewController: UIViewController,UICollectionViewDelegate, GalleryDelegate
         self.collectionViewBottomConstraint.constant = -100
         //remove the Done button
         self.navigationItem.rightBarButtonItem = nil
+        self.dismissViewControllerAnimated(true, completion: nil)
         self.savePhotoButton.hidden = false
         self.postToTwitterButton.hidden = false
     }

@@ -131,7 +131,7 @@ list.insertBack(4)
     .insertBack(3)
     .insertBack(2)
 
-list.delete(2)
+list.delete(4)
 
 list.printAll()
 
